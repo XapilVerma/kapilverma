@@ -1,4 +1,100 @@
 // =========================================
+// PARTICLE NETWORK ANIMATION (LUXURY)
+// =========================================
+const canvas = document.getElementById('particle-canvas');
+const ctx = canvas.getContext('2d');
+let particlesArray = [];
+
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+// Utility to get current theme's gold accent for particles
+function getThemeRGB() {
+    return document.body.classList.contains('light-theme') ? '155, 123, 62' : '197, 160, 89';
+}
+
+class Particle {
+    constructor(x, y, directionX, directionY, size) {
+        this.x = x;
+        this.y = y;
+        this.directionX = directionX;
+        this.directionY = directionY;
+        this.size = size;
+    }
+    draw() {
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2, false);
+        ctx.fillStyle = `rgba(${getThemeRGB()}, 0.6)`;
+        ctx.fill();
+    }
+    update() {
+        if (this.x > canvas.width || this.x < 0) this.directionX = -this.directionX;
+        if (this.y > canvas.height || this.y < 0) this.directionY = -this.directionY;
+        this.x += this.directionX;
+        this.y += this.directionY;
+        this.draw();
+    }
+}
+
+function initParticles() {
+    particlesArray = [];
+    // Adjust density based on screen size. Keeping it low for elegance.
+    let numberOfParticles = (canvas.height * canvas.width) / 18000; 
+    if(numberOfParticles > 80) numberOfParticles = 80; 
+
+    for (let i = 0; i < numberOfParticles; i++) {
+        let size = (Math.random() * 1.5) + 0.5;
+        let x = (Math.random() * ((innerWidth - size * 2) - (size * 2)) + size * 2);
+        let y = (Math.random() * ((innerHeight - size * 2) - (size * 2)) + size * 2);
+        let directionX = (Math.random() * 0.4) - 0.2; // Slow movement
+        let directionY = (Math.random() * 0.4) - 0.2;
+        
+        particlesArray.push(new Particle(x, y, directionX, directionY, size));
+    }
+}
+
+function connectParticles() {
+    let opacityValue = 1;
+    let rgb = getThemeRGB();
+    for (let a = 0; a < particlesArray.length; a++) {
+        for (let b = a; b < particlesArray.length; b++) {
+            let distance = ((particlesArray[a].x - particlesArray[b].x) * (particlesArray[a].x - particlesArray[b].x))
+            + ((particlesArray[a].y - particlesArray[b].y) * (particlesArray[a].y - particlesArray[b].y));
+            
+            // Connect if close enough
+            if (distance < (canvas.width/8) * (canvas.height/8)) {
+                opacityValue = 1 - (distance / 15000);
+                ctx.strokeStyle = `rgba(${rgb}, ${opacityValue * 0.25})`;
+                ctx.lineWidth = 0.5;
+                ctx.beginPath();
+                ctx.moveTo(particlesArray[a].x, particlesArray[a].y);
+                ctx.lineTo(particlesArray[b].x, particlesArray[b].y);
+                ctx.stroke();
+            }
+        }
+    }
+}
+
+function animateParticles() {
+    requestAnimationFrame(animateParticles);
+    ctx.clearRect(0, 0, innerWidth, innerHeight);
+    
+    for (let i = 0; i < particlesArray.length; i++) {
+        particlesArray[i].update();
+    }
+    connectParticles();
+}
+
+window.addEventListener('resize', function() {
+    canvas.width = innerWidth;
+    canvas.height = innerHeight;
+    initParticles();
+});
+
+initParticles();
+animateParticles();
+
+// =========================================
 // THEME TOGGLE LOGIC
 // =========================================
 const themeToggleBtn = document.getElementById('theme-toggle');
@@ -82,7 +178,6 @@ if (window.matchMedia("(hover: hover) and (pointer: fine)").matches) {
             const centerX = rect.width / 2;
             const centerY = rect.height / 2;
             
-            // Very subtle tilt for elegance
             const rotateX = ((y - centerY) / centerY) * -1.5; 
             const rotateY = ((x - centerX) / centerX) * 1.5;
             
